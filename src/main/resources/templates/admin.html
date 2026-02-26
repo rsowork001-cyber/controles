@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>NAUTIL Admin — Vérifications Quotidiennes</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --bg-primary: #0a0c0f;
+            --bg-secondary: #111318;
+            --bg-card: #161a21;
+            --bg-hover: #1d2230;
+            --border: #252b38;
+            --border-bright: #2e3648;
+            --accent-blue: #3b82f6;
+            --accent-blue-dim: #1d4ed8;
+            --accent-green: #10b981;
+            --accent-green-dim: #065f46;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #475569;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-sans: 'Space Grotesk', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app-wrapper { position: relative; z-index: 1; }
+
+        /* ===== HEADER ===== */
+        .header {
+            border-bottom: 1px solid var(--border);
+            background: rgba(10, 12, 15, 0.95);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 0 2rem;
+        }
+        .header-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-badge {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 700;
+            font-family: var(--font-mono);
+            color: white;
+        }
+        .logo-text { font-size: 15px; font-weight: 600; letter-spacing: 0.5px; }
+        .logo-sub { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+
+        .header-date {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--accent-green);
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 6px 14px;
+            border-radius: 6px;
+        }
+
+        /* ===== MAIN ===== */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-icon {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+        }
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .card-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            margin-top: 2px;
+        }
+        .card-body { padding: 1.5rem; }
+
+        /* ===== WORKFLOW COMPLET ===== */
+        .workflow-card {
+            margin-bottom: 1.5rem;
+        }
+        .workflow-card .card-header {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+        }
+
+        .run-all-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-family: var(--font-sans);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .run-all-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3); }
+        .run-all-btn:active { transform: translateY(0); }
+        .run-all-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* ===== STEPS ===== */
+        .steps-list { display: flex; flex-direction: column; gap: 10px; }
+
+        .step-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .step-item:hover { border-color: var(--border-bright); background: var(--bg-hover); }
+
+        .step-num {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 1.5px solid var(--border-bright);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .step-item.done .step-num { border-color: var(--accent-green); color: var(--accent-green); background: rgba(16, 185, 129, 0.1); }
+        .step-item.error .step-num { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239, 68, 68, 0.1); }
+        .step-item.running .step-num { border-color: var(--accent-amber); color: var(--accent-amber); background: rgba(245, 158, 11, 0.1); animation: pulse 1s infinite; }
+
+        .step-info { flex: 1; min-width: 0; }
+        .step-name { font-size: 13px; font-weight: 600; }
+        .step-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-family: var(--font-mono); }
+
+        .step-btn {
+            padding: 7px 16px;
+            border-radius: 7px;
+            border: 1px solid var(--border-bright);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+        .step-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(59, 130, 246, 0.08); }
+        .step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ===== EMAIL FORM ===== */
+        .email-section { margin-top: 1.5rem; }
+
+        .form-group { margin-bottom: 1rem; }
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+            font-family: var(--font-mono);
+        }
+        .form-input, .form-textarea {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            transition: border-color 0.15s;
+            outline: none;
+        }
+        .form-input:focus, .form-textarea:focus { border-color: var(--accent-blue); }
+        .form-textarea { resize: vertical; min-height: 80px; }
+
+        .send-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            color: var(--accent-green);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .send-btn:hover { background: rgba(16, 185, 129, 0.25); border-color: var(--accent-green); }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ===== RIGHT PANEL ===== */
+        .right-panel { display: flex; flex-direction: column; gap: 1.5rem; }
+
+        /* ===== LOG CONSOLE ===== */
+        .console-wrapper { flex: 1; }
+        .console-body {
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 1.8;
+            height: 400px;
+            overflow-y: auto;
+            background: #0d0f14;
+        }
+        .console-body::-webkit-scrollbar { width: 6px; }
+        .console-body::-webkit-scrollbar-track { background: transparent; }
+        .console-body::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+        .log-line { display: block; padding: 1px 0; }
+        .log-line.success { color: var(--accent-green); }
+        .log-line.error { color: var(--accent-red); }
+        .log-line.warning { color: var(--accent-amber); }
+        .log-line.info { color: var(--accent-blue); }
+        .log-line.section { color: var(--text-secondary); font-weight: 700; margin-top: 8px; }
+        .log-line.muted { color: var(--text-muted); }
+
+        .console-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            gap: 8px;
+        }
+        .console-empty-icon { font-size: 24px; opacity: 0.4; }
+        .console-empty-text { font-size: 12px; }
+
+        /* ===== CONFIG PANEL ===== */
+        .config-file {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-secondary);
+            word-break: break-all;
+            margin-bottom: 8px;
+        }
+        .config-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 4px;
+        }
+
+        /* ===== STATUS BADGE ===== */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+        .status-idle { background: rgba(71, 85, 105, 0.2); color: var(--text-muted); border: 1px solid var(--border); }
+        .status-running { background: rgba(245, 158, 11, 0.1); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.2); }
+        .status-success { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .status-error { background: rgba(239, 68, 68, 0.1); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.2); }
+
+        .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .dot.pulse { animation: pulse-dot 1s infinite; }
+
+        /* ===== TOAST ===== */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            max-width: 360px;
+        }
+        .toast.success { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-green); }
+        .toast.error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--accent-red); }
+
+        /* ===== SPINNER ===== */
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.7); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        .fade-in { animation: fadeIn 0.4s ease; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1100px) {
+            .main { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-badge">N</div>
+                <div>
+                    <div class="logo-text">NAUTIL Admin</div>
+                    <div class="logo-sub">Vérifications Quotidiennes</div>
+                </div>
+            </div>
+            <div class="header-date" th:text="'📅 ' + ${currentDate}">📅 24/02/2026</div>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- LEFT: ACTIONS -->
+        <div>
+
+            <!-- WORKFLOW COMPLET -->
+            <div class="card workflow-card fade-in">
+                <div class="card-header">
+                    <div class="card-icon" style="background: rgba(59,130,246,0.15);">⚡</div>
+                    <div>
+                        <div class="card-title">Workflow Complet</div>
+                        <div class="card-subtitle">Exécute toutes les étapes + envoi email</div>
+                    </div>
+                    <div style="margin-left:auto;" id="globalStatus">
+                        <span class="status-badge status-idle"><span class="dot"></span> Prêt</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">Email destinataire</label>
+                        <input type="email" class="form-input" id="emailToFull"
+                               th:value="${emailTo}" placeholder="destinataire@gmail.com"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Objet (laisser vide = date du jour automatique)</label>
+                        <input type="text" class="form-input" id="emailSubjectFull"
+                               placeholder="Vérification Quotidienne NAUTIL - 24/02/2026"/>
+                    </div>
+                    <button class="run-all-btn" id="btnRunAll" onclick="runCompleteWorkflow()">
+                        <span id="btnRunAllText">▶ Lancer le Workflow Complet</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ÉTAPES INDIVIDUELLES -->
+            <div class="card fade-in" style="animation-delay:0.1s">
+                <div class="card-header">
+                    <div class="card-icon" style="background: rgba(139,92,246,0.15);">🔧</div>
+                    <div>
+                        <div class="card-title">Étapes Individuelles</div>
+                        <div class="card-subtitle">Exécuter chaque action séparément</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="steps-list">
+
+                        <div class="step-item" id="step1">
+                            <div class="step-num">1</div>
+                            <div class="step-info">
+                                <div class="step-name">Renommer le fichier</div>
+                                <div class="step-desc">Met la date du jour dans le nom du fichier</div>
+                            </div>
+                            <button class="step-btn" onclick="runStep('rename', 1)">Exécuter</button>
+                        </div>
+
+                        <div class="step-item" id="step2">
+                            <div class="step-num">2</div>
+                            <div class="step-info">
+                                <div class="step-name">Vue Globale — Re7 NAUTIL</div>
+                                <div class="step-desc">Ajouter une ligne avec la date du jour</div>
+                            </div>
+                            <button class="step-btn" onclick="runStep('vue-globale', 2)">Exécuter</button>
+                        </div>
+
+                        <div class="step-item" id="step3">
+                            <div class="step-num">3</div>
+                            <div class="step-info">
+                                <div class="step-name">Nettoyer TX1, TX2, TX3</div>
+                                <div class="step-desc">Supprimer données B4:G(fin) dans chaque onglet</div>
+                            </div>
+                            <button class="step-btn" onclick="runStep('clear-tx', 3)">Exécuter</button>
+                        </div>
+
+                        <div class="step-item" id="step4">
+                            <div class="step-num">4</div>
+                            <div class="step-info">
+                                <div class="step-name">Vider onglets après TX3</div>
+                                <div class="step-desc">Supprimer toutes les données des onglets suivants</div>
+                            </div>
+                            <button class="step-btn" onclick="runStep('clear-after-tx3', 4)">Exécuter</button>
+                        </div>
+
+                        <div class="step-item" id="step5">
+                            <div class="step-num">5</div>
+                            <div class="step-info">
+                                <div class="step-name">Nettoyer template.xlsx</div>
+                                <div class="step-desc">Supprimer données A4:F(fin) du template</div>
+                            </div>
+                            <button class="step-btn" onclick="runStep('clear-template', 5)">Exécuter</button>
+                        </div>
+
+                    </div>
+
+                    <!-- EMAIL individuel -->
+                    <div class="email-section">
+                        <div style="height:1px; background:var(--border); margin-bottom:1.25rem;"></div>
+                        <div class="card-title" style="font-size:13px; margin-bottom:1rem;">📧 Envoi Email (étape 6)</div>
+                        <div class="form-group">
+                            <label class="form-label">Destinataire</label>
+                            <input type="email" class="form-input" id="emailTo"
+                                   th:value="${emailTo}" placeholder="destinataire@gmail.com"/>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Objet</label>
+                            <input type="text" class="form-input" id="emailSubject"
+                                   placeholder="Vérification Quotidienne NAUTIL - 24/02/2026"/>
+                        </div>
+                        <button class="send-btn" id="btnSendEmail" onclick="sendEmail()">
+                            ✉ Envoyer l'Email avec Pièce Jointe
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="right-panel">
+
+            <!-- LOG CONSOLE -->
+            <div class="card console-wrapper fade-in" style="animation-delay:0.15s">
+                <div class="card-header">
+                    <div class="card-icon" style="background: rgba(16,185,129,0.15);">⬛</div>
+                    <div>
+                        <div class="card-title">Console</div>
+                        <div class="card-subtitle">Logs d'exécution en temps réel</div>
+                    </div>
+                    <button onclick="clearConsole()"
+                            style="margin-left:auto; background:none; border:1px solid var(--border); color:var(--text-muted);
+                                   padding:4px 10px; border-radius:6px; cursor:pointer; font-size:11px; font-family:var(--font-mono);">
+                        Vider
+                    </button>
+                </div>
+                <div class="console-body" id="consoleOutput">
+                    <div class="console-empty" id="consoleEmpty">
+                        <div class="console-empty-icon">$_</div>
+                        <div class="console-empty-text">En attente d'exécution…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONFIG FILES -->
+            <div class="card fade-in" style="animation-delay:0.2s">
+                <div class="card-header">
+                    <div class="card-icon" style="background: rgba(245,158,11,0.15);">📁</div>
+                    <div>
+                        <div class="card-title">Configuration Fichiers</div>
+                        <div class="card-subtitle">Chemins configurés</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div style="margin-bottom:12px;">
+                        <div class="config-label">Fichier de vérification</div>
+                        <div class="config-file" th:text="${verificationFile}">C:/NAUTIL/Vérification...</div>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <div class="config-label">Template</div>
+                        <div class="config-file" th:text="${templateFile}">C:/NAUTIL/template.xlsx</div>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:8px; font-family:var(--font-mono);">
+                        ⚙ Modifiable dans application.properties
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+    const consoleOutput = document.getElementById('consoleOutput');
+    const consoleEmpty = document.getElementById('consoleEmpty');
+
+    function log(message, type = 'muted') {
+        if (consoleEmpty) consoleEmpty.style.display = 'none';
+
+        const line = document.createElement('span');
+        line.className = 'log-line ' + type;
+
+        const ts = new Date().toLocaleTimeString('fr-FR', { hour12: false });
+        line.textContent = '[' + ts + '] ' + message;
+
+        consoleOutput.appendChild(line);
+        consoleOutput.appendChild(document.createTextNode('\n'));
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    function logSection(title) {
+        const line = document.createElement('span');
+        line.className = 'log-line section';
+        line.textContent = '──── ' + title + ' ────';
+        consoleOutput.appendChild(line);
+        consoleOutput.appendChild(document.createTextNode('\n'));
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    function clearConsole() {
+        consoleOutput.innerHTML = '';
+        const empty = document.createElement('div');
+        empty.id = 'consoleEmpty';
+        empty.className = 'console-empty';
+        empty.innerHTML = '<div class="console-empty-icon">$_</div><div class="console-empty-text">Console vidée…</div>';
+        consoleOutput.appendChild(empty);
+    }
+
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + type;
+        toast.textContent = type === 'success' ? '✅ ' + message : '❌ ' + message;
+        document.getElementById('toastContainer').appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    function setGlobalStatus(status) {
+        const el = document.getElementById('globalStatus');
+        const classes = { idle: 'status-idle', running: 'status-running', success: 'status-success', error: 'status-error' };
+        const labels = { idle: 'Prêt', running: 'En cours…', success: 'Terminé', error: 'Erreur' };
+        const dots = { idle: '', running: 'pulse', success: '', error: '' };
+        el.innerHTML = `<span class="status-badge ${classes[status]}"><span class="dot ${dots[status]}"></span> ${labels[status]}</span>`;
+    }
+
+    function setStepStatus(num, status) {
+        const el = document.getElementById('step' + num);
+        el.classList.remove('done', 'error', 'running');
+        if (status) el.classList.add(status);
+
+        const numEl = el.querySelector('.step-num');
+        if (status === 'done') numEl.textContent = '✓';
+        else if (status === 'error') numEl.textContent = '✕';
+        else if (status === 'running') numEl.textContent = '…';
+        else numEl.textContent = num;
+    }
+
+    function renderLogs(logs) {
+        if (!logs || !logs.length) return;
+        logs.forEach(line => {
+            let type = 'muted';
+            if (line.startsWith('✅')) type = 'success';
+            else if (line.startsWith('❌')) type = 'error';
+            else if (line.startsWith('⚠️')) type = 'warning';
+            else if (line.startsWith('===')) { logSection(line.replace(/===/g, '').trim()); return; }
+            else if (line.startsWith('ℹ️')) type = 'info';
+            log(line, type);
+        });
+    }
+
+    // ===== ÉTAPES INDIVIDUELLES =====
+    async function runStep(endpoint, stepNum) {
+        const btn = document.querySelector('#step' + stepNum + ' .step-btn');
+        btn.disabled = true;
+        btn.textContent = '…';
+        setStepStatus(stepNum, 'running');
+        log('Lancement étape ' + stepNum + '...', 'info');
+
+        try {
+            const resp = await fetch('/api/step/' + endpoint, { method: 'POST' });
+            const data = await resp.json();
+            renderLogs(data.logs);
+
+            if (data.success) {
+                setStepStatus(stepNum, 'done');
+                showToast(data.message, 'success');
+            } else {
+                setStepStatus(stepNum, 'error');
+                log('❌ ' + data.message, 'error');
+                showToast(data.message, 'error');
+            }
+        } catch (e) {
+            setStepStatus(stepNum, 'error');
+            log('❌ Erreur réseau : ' + e.message, 'error');
+            showToast('Erreur réseau', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Exécuter';
+        }
+    }
+
+    // ===== ENVOI EMAIL INDIVIDUEL =====
+    async function sendEmail() {
+        const btn = document.getElementById('btnSendEmail');
+        btn.disabled = true;
+        btn.textContent = '⏳ Envoi en cours…';
+
+        const to = document.getElementById('emailTo').value;
+        const subject = document.getElementById('emailSubject').value;
+
+        log('Envoi email à ' + (to || 'destinataire par défaut') + '...', 'info');
+
+        const params = new URLSearchParams();
+        if (to) params.append('to', to);
+        if (subject) params.append('subject', subject);
+
+        try {
+            const resp = await fetch('/api/step/send-email?' + params.toString(), { method: 'POST' });
+            const data = await resp.json();
+            renderLogs(data.logs);
+
+            if (data.success) {
+                showToast(data.message, 'success');
+            } else {
+                log('❌ ' + data.message, 'error');
+                showToast(data.message, 'error');
+            }
+        } catch (e) {
+            log('❌ Erreur : ' + e.message, 'error');
+            showToast('Erreur réseau', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '✉ Envoyer l\'Email avec Pièce Jointe';
+        }
+    }
+
+    // ===== WORKFLOW COMPLET =====
+    async function runCompleteWorkflow() {
+        const btn = document.getElementById('btnRunAll');
+        const btnText = document.getElementById('btnRunAllText');
+        btn.disabled = true;
+        btnText.innerHTML = '<span class="spinner"></span> Traitement en cours…';
+        setGlobalStatus('running');
+        log('🚀 Démarrage du workflow complet...', 'info');
+
+        const emailTo = document.getElementById('emailToFull').value;
+        const emailSubject = document.getElementById('emailSubjectFull').value;
+        const params = new URLSearchParams();
+        if (emailTo) params.append('emailTo', emailTo);
+        if (emailSubject) params.append('emailSubject', emailSubject);
+
+        // Animer les étapes
+        for (let i = 1; i <= 5; i++) setStepStatus(i, null);
+
+        try {
+            const resp = await fetch('/api/run-complete?' + params.toString(), { method: 'POST' });
+            const data = await resp.json();
+            renderLogs(data.logs);
+
+            if (data.success) {
+                setGlobalStatus('success');
+                for (let i = 1; i <= 5; i++) setStepStatus(i, 'done');
+                showToast(data.message || 'Workflow terminé avec succès !', 'success');
+            } else {
+                setGlobalStatus('error');
+                showToast(data.message, 'error');
+            }
+        } catch (e) {
+            setGlobalStatus('error');
+            log('❌ Erreur réseau : ' + e.message, 'error');
+            showToast('Erreur réseau', 'error');
+        } finally {
+            btn.disabled = false;
+            btnText.textContent = '▶ Lancer le Workflow Complet';
+        }
+    }
+</script>
+
+</body>
+</html>
